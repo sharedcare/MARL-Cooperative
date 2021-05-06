@@ -23,21 +23,22 @@ DEFAULT_COLOURS = {' ': [0, 0, 0],  # Black background
                    'E': [101, 67, 254],  # ecalation
 
                    # Colours for agents. R value is a unique identifier
-                   '1': [166, 90, 3],  
+                   '1': [166, 90, 3],
                    '2': [30, 191, 252],  # Blue
                    '3': [204, 168, 0],
-                   '4': [154, 157, 252]}  
+                   '4': [154, 157, 252]}
 TRUN_MATURE = 0.3
-TRUN_DEATH = 0.3 
+TRUN_DEATH = 0.3
+
 
 class GridWorldEnv(object):
-    def __init__(self, args, choose=0, length = 5):
+    def __init__(self, args, choose=0, length=5):
         self.env_name = args.env_name
         self.num_agents = args.num_agents
         self.episode_length = args.episode_length
-        self.length = length      
-        self.color_map = DEFAULT_COLOURS          
-        self.share_reward = args.share_reward        
+        self.length = length
+        self.color_map = DEFAULT_COLOURS
+        self.share_reward = args.share_reward
         self.shape_reward = args.shape_reward
         self.shape_beta = args.shape_beta
         if self.env_name == "StagHuntGW":
@@ -45,20 +46,19 @@ class GridWorldEnv(object):
             self.gore2_num = 0
             self.hare1_num = 0
             self.hare2_num = 0
-            self.coop = 5  
+            self.coop = 5
             self.defect = -2
             self.gore = 2
             self.reward_randomization = args.reward_randomization
             if self.reward_randomization:
-                #coop = [5,4,0,5,5,-5,-5,5]
-                #defect = [1,2,5,0,0,5,0,-5]
-                #gore = [-5,-2,0,5,0,-5,5,5]
-                
+                # coop = [5,4,0,5,5,-5,-5,5]
+                # defect = [1,2,5,0,0,5,0,-5]
+                # gore = [-5,-2,0,5,0,-5,5,5]
+
                 coop = [5]
                 defect = [0]
                 gore = [0]
-                
-                
+
                 self.coop = coop[choose]
                 self.defect = defect[choose]
                 self.gore = gore[choose]
@@ -67,36 +67,36 @@ class GridWorldEnv(object):
                 self.coop = self.coop * coef[0]
                 self.defect = self.defect * coef[1]
                 self.gore = self.gore * coef[2]
-                '''               
+                '''
         elif self.env_name == "HarvestGW":
             self.coop = 2
             self.defect = 1
             self.reward_randomization = args.reward_randomization
             if self.reward_randomization:
-                coop = [5,10,0,-10,10]
-                defect = [1,-10,-5,10,1]
+                coop = [5, 10, 0, -10, 10]
+                defect = [1, -10, -5, 10, 1]
                 self.coop = coop[choose]
                 self.defect = defect[choose]
                 '''
                 coef = 2*np.random.rand(2)-1
                 self.coop = self.coop * coef[0]
                 self.defect = self.defect * coef[1]
-                ''' 
+                '''
         elif self.env_name == "EscalationGW":
             self.coop = 1
             self.coop_length = 0
             self.defect_coef = -0.9
             self.reward_randomization = args.reward_randomization
             if self.reward_randomization:
-                coop = [1,1,0,1,1,1]
+                coop = [1, 1, 0, 1, 1, 1]
                 defect_coef = [0, -2, 1, -0.5, 1, 5]
                 self.coop = coop[choose]
                 self.defect_coef = defect_coef[choose]
 
         self.max_life = 20
-        self.coop_num = 0       
+        self.coop_num = 0
         self.reset_map()
-        self.setup_agents()       
+        self.setup_agents()
 
     @property
     def action_space(self):
@@ -126,7 +126,7 @@ class GridWorldEnv(object):
             else:
                 points.append(index)
                 num_index += 1
-        
+
         for i in range(self.num_agents):
             self.agents_start_pos.append(points[i])
 
@@ -156,7 +156,7 @@ class GridWorldEnv(object):
             else:
                 points.append(index)
                 num_index += 1
-        
+
         for i in range(self.num_agents):
             self.agents_start_pos.append(points[i])
 
@@ -166,9 +166,11 @@ class GridWorldEnv(object):
         self.life[points[-1][0], points[-1][1]] += 1
 
     def Escalation_setup_map(self):
-        self.agents_start_pos = []        
+        self.agents_start_pos = []
         points = []
         num_index = 0
+        # randomly point agents on the grid-world and also
+        # randomly set up an target (escalation) position
         while num_index < (self.num_agents+1):
             index = np.random.randint(0, self.length, (2)).tolist()
             if (index in points):
@@ -176,7 +178,7 @@ class GridWorldEnv(object):
             else:
                 points.append(index)
                 num_index += 1
-        
+
         for i in range(self.num_agents):
             self.agents_start_pos.append(points[i])
 
@@ -246,10 +248,10 @@ class GridWorldEnv(object):
             # other pos
             other_pos = self.agents[1-agent_id].pos.tolist()
             # escalation pos
-            escalation_pos = self.escalation_pos.tolist()            
-            #return np.concatenate([my_pos]+[other_pos]+[escalation_pos]+[[self.coop_length]])
+            escalation_pos = self.escalation_pos.tolist()
+            # return np.concatenate([my_pos]+[other_pos]+[escalation_pos]+[[self.coop_length]])
             return np.concatenate([my_pos]+[other_pos]+[escalation_pos])
-            
+
     def reset_map(self):
         """Resets the map to be empty as well as a custom reset set by subclasses"""
         self.base_map = np.full((self.length, self.length),' ')
@@ -259,7 +261,6 @@ class GridWorldEnv(object):
             self.Harvest_setup_map()
         elif self.env_name == "EscalationGW":
             self.Escalation_setup_map()
-        
 
     def get_map_with_agents(self):
         """Gets a version of the environment map where generic
@@ -280,7 +281,7 @@ class GridWorldEnv(object):
                 map_with_agents[self.agents[i].pos[0], self.agents[i].pos[1]] = '3'
 
         return map_with_agents
-   
+
     def update_moves(self, agent_actions):
         for agent_id, action in agent_actions.items():
             agent = self.agents[agent_id]
@@ -391,9 +392,9 @@ class GridWorldEnv(object):
 
     def EscalationUpdateMap(self):
         actions = [[0,1],[0,-1],[-1,0],[1,0]]
-        last_pos = self.escalation_pos      
+        last_pos = self.escalation_pos
         while self.escalation_points == 0:
-            next_choose = np.random.randint(0,4)          
+            next_choose = np.random.randint(0,4)
             next_pos = last_pos + actions[next_choose]
             next_row, next_col = next_pos
             if next_row < 0 or next_row >= self.length or next_col < 0 or next_col >= self.length:
@@ -403,7 +404,6 @@ class GridWorldEnv(object):
                 self.escalation_points = 1
                 self.escalation_pos = next_pos
                 self.base_map[next_pos[0], next_pos[1]] = 'E'
-
 
     def HarvestUpdateMap(self):
         for i in range(self.life.shape[0]):
@@ -542,7 +542,7 @@ class GridWorldEnv(object):
                 self.agents[1].reward_this_turn = self.defect_coef * self.coop_length
                 self.agents[0].done = True
                 self.agents[1].done = True
-    
+
     def StagHuntConsume(self, pos0, pos1):
         """Defines how an agent interacts with the char it is standing on"""
         charA = self.base_map[pos0[0], pos0[1]]
@@ -764,7 +764,7 @@ class GridWorldEnv(object):
                 self.stag_points -= 1
                 self.hare2_points -= 1
                 self.base_map[pos1[0], pos1[1]] = ' '
-        
+
     def close(self):
         self.agents = []
         return None
@@ -786,8 +786,8 @@ class GridWorldEnv(object):
 
         rgb_arr = self.map_to_colors(map_with_agents)
         plt.figure()
-        plt.imshow(rgb_arr, interpolation='nearest')        
-        
+        plt.imshow(rgb_arr, interpolation='nearest')
+
         if 'StagHunt' in self.env_name: 
             text = "#Coop.-Hunt = " + str(self.coop_num) + "/" + str(self.episode_length)        
             plt.text(0, 0, text, fontdict={'size': 10, 'color':  'white'})
@@ -817,13 +817,10 @@ class GridWorldEnv(object):
         for i in range(self.num_agents):
             agent_action = self.agents[i].action_map(actions[i]) 
             agent_actions[i] = agent_action
-        
         if self.env_name == 'StagHuntGW':
             self.update_stag()
-               
         # move
         self.update_moves(agent_actions)
-                                   
         pos0 = self.agents[0].get_pos().tolist()
         pos1 = self.agents[1].get_pos().tolist()
         if self.env_name == 'StagHuntGW':
@@ -846,7 +843,7 @@ class GridWorldEnv(object):
             reward = self.agents[i].compute_reward() * 0.1
             rewards.append(reward)
             dones.append(self.agents[i].get_done())
-            
+
         collective_return = 0
         for i in range(self.num_agents):
             collective_return += self.agents[i].collective_return
@@ -858,8 +855,8 @@ class GridWorldEnv(object):
             infos['gore2_num'] = self.gore2_num
             infos['hare1_num'] = self.hare1_num
             infos['hare2_num'] = self.hare2_num
-            
         global_reward = np.sum(rewards)  
+
         if self.share_reward:
             rewards = [global_reward] * self.num_agents
 
@@ -881,7 +878,3 @@ class GridWorldEnv(object):
             observations.append(self.get_obs_agent(i))
         
         return observations
-
-
-
-    

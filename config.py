@@ -6,7 +6,7 @@ def get_config():
     parser = argparse.ArgumentParser(description='RPG.')
 
     # prepare
-    parser.add_argument("--algorithm_name", type=str, default='check')
+    parser.add_argument("--algorithm_name", type=str, default='HysQ')
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--cuda", action='store_false', default=True)
     parser.add_argument("--cuda_deterministic", action='store_false', default=True)
@@ -17,7 +17,7 @@ def get_config():
     # adaptive
     parser.add_argument("--num_policy_candidates", type=int, default=10)
     parser.add_argument("--policy_finetune", action='store_true', default=False)
-    parser.add_argument("--policy_adaptive", action='store_true', default=False) 
+    parser.add_argument("--policy_adaptive", action='store_true', default=False)
     
     # rnn
     parser.add_argument("--naive_recurrent_policy", action='store_true', default=False, help='use a naive recurrent policy')
@@ -27,7 +27,7 @@ def get_config():
     parser.add_argument("--critic_full_obs", action='store_true', default=False)
     
     # env
-    parser.add_argument("--env_name", type=str, default='StagHunt')
+    parser.add_argument("--env_name", type=str, default='EscalationGW')
     parser.add_argument("--num_agents", type=int, default=2)
 
     # matrix game
@@ -72,6 +72,7 @@ def get_config():
     
     # log
     parser.add_argument("--log_interval", type=int, default=1)
+    parser.add_argument("--plot_reward", action='store_true', default=False)
 
     #eval
     parser.add_argument("--eval", action='store_true', default=False)
@@ -79,8 +80,8 @@ def get_config():
     parser.add_argument("--ifi", type=float, default=0.333333)
     parser.add_argument("--eval_episodes", type=int, default=100)
     parser.add_argument("--model_dir", type=str, default='/home/yuchao/project/')
-    
-    
+
     args = parser.parse_args()
 
+    # return vars(args)
     return args
