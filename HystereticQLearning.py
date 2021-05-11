@@ -109,7 +109,7 @@ class ReinforcementLearning(object):
         """
         self.env = env
 
-    def QLearning(self, nEpisodes, epsilon=0.1, alpha=0.1, max_step=10000):
+    def QLearning(self, nEpisodes, epsilon_end=0.001, alpha=0.1, max_step=10000):
         # get the number of action
         nAction = self.env.action_space[0].n
         gw_size = self.env.length
@@ -123,7 +123,13 @@ class ReinforcementLearning(object):
         policy2 = np.zeros([gw_size, gw_size, gw_size, gw_size, gw_size, gw_size])
         # Save the return value for each episode
         total_reward_episodes = []
-
+        # Set up epsilon value
+        epsilon_start = 1.0
+        epsilon_end = epsilon_end
+        num_epsilon_decay = 500000          # assume an average of 50 steps for each episode, this will need 10000 episodes
+        epsilons = np.linspace(epsilon_start, epsilon_end, num=num_epsilon_decay)
+        # Set up the total timestep
+        total_t = 0
         # start training
         for episode in range(nEpisodes):
             # reset the env
@@ -140,9 +146,11 @@ class ReinforcementLearning(object):
             collective_reward = 0
             cumu_discount = 1.0
             while not done:
+                # epsilon of current timestep
+                cur_epsilon = epsilons[min(total_t, num_epsilon_decay-1)]
                 # choose A from S using policy derived from Q
-                behavior_policy_agent_1 = EpsilonGreedyPolicy(nAction, gw_size, Q1, epsilon)
-                behavior_policy_agent_2 = EpsilonGreedyPolicy(nAction, gw_size, Q2, epsilon)
+                behavior_policy_agent_1 = EpsilonGreedyPolicy(nAction, gw_size, Q1, cur_epsilon)
+                behavior_policy_agent_2 = EpsilonGreedyPolicy(nAction, gw_size, Q2, cur_epsilon)
                 action_agent_1 = behavior_policy_agent_1.action(s1)
                 action_agent_2 = behavior_policy_agent_2.action(s2)
                 # convert agent action to 1-hot format
@@ -182,6 +190,7 @@ class ReinforcementLearning(object):
                 else:
                     done = False
                 steps_cnt += 1
+                total_t += 1
                 if steps_cnt >= max_step:
                     coop_num_cnt = infos['coop&coop_num']
                     collective_reward = infos['collective_return']
@@ -209,7 +218,7 @@ class ReinforcementLearning(object):
 
         return Q1, Q2, policy1, policy2, total_reward_episodes_df
 
-    def HysQLearning(self, nEpisodes, epsilon=0.1, alpha=0.1, beta=0.01, max_step=10000):
+    def HysQLearning(self, nEpisodes, epsilon_end=0.001, alpha=0.1, beta=0.01, max_step=10000):
         # get the number of action
         nAction = self.env.action_space[0].n
         gw_size = self.env.length
@@ -223,7 +232,13 @@ class ReinforcementLearning(object):
         policy2 = np.zeros([gw_size, gw_size, gw_size, gw_size, gw_size, gw_size])
         # Save the return value for each episode
         total_reward_episodes = []
-
+        # Set up epsilon value
+        epsilon_start = 1.0
+        epsilon_end = epsilon_end
+        num_epsilon_decay = 500000          # assume an average of 50 steps for each episode, this will need 10000 episodes
+        epsilons = np.linspace(epsilon_start, epsilon_end, num=num_epsilon_decay)
+        # set up the total timestep
+        total_t = 0
         # start training
         for episode in range(nEpisodes):
             # reset the env
@@ -240,9 +255,11 @@ class ReinforcementLearning(object):
             collective_reward = 0
             cumu_discount = 1.0
             while not done:
+                # epsilon of current timestep
+                cur_epsilon = epsilons[min(total_t, num_epsilon_decay-1)]
                 # choose A from S using policy derived from Q
-                behavior_policy_agent_1 = EpsilonGreedyPolicy(nAction, gw_size, Q1, epsilon)
-                behavior_policy_agent_2 = EpsilonGreedyPolicy(nAction, gw_size, Q2, epsilon)
+                behavior_policy_agent_1 = EpsilonGreedyPolicy(nAction, gw_size, Q1, cur_epsilon)
+                behavior_policy_agent_2 = EpsilonGreedyPolicy(nAction, gw_size, Q2, cur_epsilon)
                 action_agent_1 = behavior_policy_agent_1.action(s1)
                 action_agent_2 = behavior_policy_agent_2.action(s2)
                 # convert agent action to 1-hot format
