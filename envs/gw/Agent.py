@@ -1,17 +1,18 @@
 """Base class for an agent that defines the possible actions. """
 
-#from gym.spaces import Box
+# from gym.spaces import Box
 from gym.spaces import Discrete
 import numpy as np
 import utils.utility_funcs as util
 
 # basic moves every agent should do
-AGENT_ACTIONS = {0: 'MOVE_LEFT',  # Move left
-                1: 'MOVE_RIGHT',  # Move right
-                2: 'MOVE_UP',  # Move up
-                3: 'MOVE_DOWN',  # Move down
-                4: 'STAY'  # don't move
-                }  # Rotate clockwise
+AGENT_ACTIONS = {
+    0: 'MOVE_LEFT',  # Move left
+    1: 'MOVE_RIGHT',  # Move right
+    2: 'MOVE_UP',  # Move up
+    3: 'MOVE_DOWN',  # Move down
+    4: 'STAY'  # don't move
+}  # Rotate clockwise
 
 
 class Agent(object):
@@ -45,9 +46,9 @@ class Agent(object):
         if 'Harvest' in self.env_name:
             self.observation_space = [3, self.grid.shape[0], self.grid.shape[1]]
         elif 'StagHunt' in self.env_name:
-            self.observation_space = [10] 
+            self.observation_space = [10]
         elif 'Escalation' in self.env_name:
-            self.observation_space = [6]       
+            self.observation_space = [6]
 
     def action_map(self, action_number):
         """Maps action_number to a desired action in the map"""
@@ -98,5 +99,5 @@ class Agent(object):
         temp_pos = new_pos.copy()
         if new_row < 0 or new_row >= self.grid.shape[0] or new_col < 0 or new_col >= self.grid.shape[1]:
             temp_pos = self.get_pos()
-        
+
         self.set_pos(temp_pos)

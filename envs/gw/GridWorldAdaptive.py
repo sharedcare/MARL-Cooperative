@@ -6,53 +6,57 @@ from .Agent import Agent
 import torch
 import matplotlib.pyplot as plt
 
-ACTIONS = {'MOVE_LEFT': [0, -1],  # Move left
-           'MOVE_RIGHT': [0, 1],  # Move right
-           'MOVE_UP': [-1, 0],  # Move up
-           'MOVE_DOWN': [1, 0],  # Move down
-           'STAY': [0, 0]  # don't move
-           }
+ACTIONS = {
+    'MOVE_LEFT': [0, -1],  # Move left
+    'MOVE_RIGHT': [0, 1],  # Move right
+    'MOVE_UP': [-1, 0],  # Move up
+    'MOVE_DOWN': [1, 0],  # Move down
+    'STAY': [0, 0]  # don't move
+}
 
 # bgr
-DEFAULT_COLOURS = {' ': [0, 0, 0],  # Black background
-                   'S': [101, 67, 254],  # stag
-                   'H': [178, 196, 47],  # hare1
-                   'G': [178, 196, 47],  # hare2
-                   'Y': [216, 30, 54],  # young
-                   'M': [159, 67, 255],  # mature
-                   'C': [238, 133, 114],  # chonghe
-                   'D': [238, 133, 114],  # chonghe2
-                   'E': [101, 67, 254],  # ecalation
+DEFAULT_COLOURS = {
+    ' ': [0, 0, 0],  # Black background
+    'S': [101, 67, 254],  # stag
+    'H': [178, 196, 47],  # hare1
+    'G': [178, 196, 47],  # hare2
+    'Y': [216, 30, 54],  # young
+    'M': [159, 67, 255],  # mature
+    'C': [238, 133, 114],  # chonghe
+    'D': [238, 133, 114],  # chonghe2
+    'E': [101, 67, 254],  # ecalation
 
-                   # Colours for agents. R value is a unique identifier
-                   '1': [166, 90, 3],  
-                   '2': [30, 191, 252],  # Blue
-                   '3': [204, 168, 0],
-                   '4': [154, 157, 252]} 
+    # Colours for agents. R value is a unique identifier
+    '1': [166, 90, 3],
+    '2': [30, 191, 252],  # Blue
+    '3': [204, 168, 0],
+    '4': [154, 157, 252]
+}
 TRUN_MATURE = 0.3
 TRUN_DEATH = 0.3
 
+
 class GridWorldAdaptiveEnv(object):
-    def __init__(self, args, policy_candidates, length = 5):
+    def __init__(self, args, policy_candidates, length=5):
         self.env_name = args.env_name
         self.num_agents = args.num_agents
         self.episode_length = args.episode_length
-        self.length = length      
-        self.color_map = DEFAULT_COLOURS          
-        self.share_reward = args.share_reward        
+        self.length = length
+        self.color_map = DEFAULT_COLOURS
+        self.share_reward = args.share_reward
         self.shape_reward = args.shape_reward
         self.shape_beta = args.shape_beta
         if self.env_name == "StagHuntGWAdaptive":
             self.coop = 5
             self.defect = 2
-            self.gore = -2                
+            self.gore = -2
         elif self.env_name == "HarvestGWAdaptive":
             self.coop = 2
             self.defect = 1
         elif self.env_name == "EscalationGWAdaptive":
             self.coop = 1
             self.defect_coef = -0.9
-            self.coop_length = 0     
+            self.coop_length = 0
         self.max_life = 20
         self.coop_num = 0
         self.gore1_num = 0
@@ -63,7 +67,7 @@ class GridWorldAdaptiveEnv(object):
         self.policy_candidates = policy_candidates
         self.critic_full_obs = args.critic_full_obs
         self.reset_map()
-        self.setup_agents()       
+        self.setup_agents()
 
     @property
     def action_space(self):
@@ -98,7 +102,6 @@ class GridWorldAdaptiveEnv(object):
             else:
                 points.append(index)
                 num_index += 1
-        
         for i in range(self.num_agents):
             self.agents_start_pos.append(points[i])
 
@@ -128,7 +131,7 @@ class GridWorldAdaptiveEnv(object):
             else:
                 points.append(index)
                 num_index += 1
-        
+
         for i in range(self.num_agents):
             self.agents_start_pos.append(points[i])
 
@@ -136,9 +139,9 @@ class GridWorldAdaptiveEnv(object):
         self.young_points += 1
         self.young_pos.append(points[-1])
         self.life[points[-1][0], points[-1][1]] += 1
-        
+
     def Escalation_setup_map(self):
-        self.agents_start_pos = []        
+        self.agents_start_pos = []
         points = []
         num_index = 0
         while num_index < (self.num_agents+1):
@@ -148,7 +151,7 @@ class GridWorldAdaptiveEnv(object):
             else:
                 points.append(index)
                 num_index += 1
-        
+
         for i in range(self.num_agents):
             self.agents_start_pos.append(points[i])
 
@@ -156,7 +159,7 @@ class GridWorldAdaptiveEnv(object):
         self.escalation_points = 1
         self.escalation_pos = np.array(points[-1])
 
-    def setup_agents(self,choose = -1):
+    def setup_agents(self, choose=-1):
         self.coop_num = 0
         self.gore1_num = 0
         self.gore2_num = 0
@@ -180,7 +183,7 @@ class GridWorldAdaptiveEnv(object):
         self.recurrent_hidden_states_critic = torch.zeros(1, self.opponent_actor_critic.recurrent_hidden_state_size)
         self.recurrent_c_states = torch.zeros(1, self.opponent_actor_critic.recurrent_hidden_state_size)
         self.recurrent_c_states_critic = torch.zeros(1, self.opponent_actor_critic.recurrent_hidden_state_size)
-        self.masks = torch.ones(1,1)
+        self.masks = torch.ones(1, 1)
 
     def map_to_colors(self, base_map=None, color_map=None):
         """Converts a map to an array of RGB values.
@@ -214,7 +217,7 @@ class GridWorldAdaptiveEnv(object):
         """
         if 'Harvest' in self.env_name:
             rgb_arr = self.map_to_colors(self.get_map_with_agents(), self.color_map)
-            return rgb_arr.transpose(2,0,1)
+            return rgb_arr.transpose(2, 0, 1)
         elif 'StagHunt' in self.env_name:
             # my pos
             my_pos = self.agents[agent_id].pos.tolist()
@@ -232,20 +235,19 @@ class GridWorldAdaptiveEnv(object):
             # other pos
             other_pos = self.agents[1-agent_id].pos.tolist()
             # escalation pos
-            escalation_pos = self.escalation_pos.tolist()            
-            #return np.concatenate([my_pos]+[other_pos]+[escalation_pos]+[[self.coop_length]])
+            escalation_pos = self.escalation_pos.tolist()
+            # return np.concatenate([my_pos]+[other_pos]+[escalation_pos]+[[self.coop_length]])
             return np.concatenate([my_pos]+[other_pos]+[escalation_pos])
 
     def reset_map(self):
         """Resets the map to be empty as well as a custom reset set by subclasses"""
-        self.base_map = np.full((self.length, self.length),' ')
+        self.base_map = np.full((self.length, self.length), ' ')
         if self.env_name == "StagHuntGWAdaptive":
             self.StagHunt_setup_map()
         elif self.env_name == "HarvestGWAdaptive":
             self.Harvest_setup_map()
         elif self.env_name == "EscalationGWAdaptive":
             self.Escalation_setup_map()
-        
 
     def get_map_with_agents(self):
         """Gets a version of the environment map where generic
@@ -257,20 +259,20 @@ class GridWorldAdaptiveEnv(object):
         map_with_agents = np.copy(self.base_map)
 
         for i in range(self.num_agents):
-            char_id = str(i + 1) # agent-i
+            char_id = str(i + 1)    # agent-i
             if map_with_agents[self.agents[i].pos[0], self.agents[i].pos[1]] == ' ':
                 map_with_agents[self.agents[i].pos[0], self.agents[i].pos[1]] = char_id
             else:
                 map_with_agents[self.agents[i].pos[0], self.agents[i].pos[1]] = '3'
 
         return map_with_agents
-   
+
     def update_moves(self, agent_actions):
         for agent_id, action in agent_actions.items():
-            agent = self.agents[agent_id]            
+            agent = self.agents[agent_id]
             selected_action = ACTIONS[action]
             new_pos = agent.get_pos() + selected_action
-            # allow the agents to confirm what position they can move to               
+            # allow the agents to confirm what position they can move to
             agent.update_agent_pos(new_pos)
 
     def update_stag(self):
@@ -410,13 +412,12 @@ class GridWorldAdaptiveEnv(object):
                     self.young_points += 1
                     self.young_pos.append(index)
                     self.life[index[0],index[1]] += 1
-                    
-                    
+
     def EscalationUpdateMap(self):
-        actions = [[0,1],[0,-1],[-1,0],[1,0]]
-        last_pos = self.escalation_pos      
+        actions = [[0, 1], [0, -1], [-1, 0], [1, 0]]
+        last_pos = self.escalation_pos
         while self.escalation_points == 0:
-            next_choose = np.random.randint(0,4)          
+            next_choose = np.random.randint(0, 4)
             next_pos = last_pos + actions[next_choose]
             next_row, next_col = next_pos
             if next_row < 0 or next_row >= self.length or next_col < 0 or next_col >= self.length:
@@ -431,7 +432,7 @@ class GridWorldAdaptiveEnv(object):
         """Defines how an agent interacts with the char it is standing on"""
         charA = self.base_map[pos0[0], pos0[1]]
         charB = self.base_map[pos1[0], pos1[1]]
-        if pos0==pos1:
+        if pos0 == pos1:
             if charA == 'M':
                 self.agents[0].reward_this_turn += self.coop
                 self.agents[1].reward_this_turn += self.coop
@@ -500,7 +501,7 @@ class GridWorldAdaptiveEnv(object):
                     self.young_pos.remove(pos1)
                     self.base_map[pos1[0], pos1[1]] = ' '
                     self.life[pos1[0], pos1[1]] = 0
-    
+
     def StagHuntConsume(self, pos0, pos1):
         """Defines how an agent interacts with the char it is standing on"""
         charA = self.base_map[pos0[0], pos0[1]]
@@ -722,7 +723,7 @@ class GridWorldAdaptiveEnv(object):
                 self.stag_points -= 1
                 self.hare2_points -= 1
                 self.base_map[pos1[0], pos1[1]] = ' '
-                
+
     def EscalationConsume(self, pos0, pos1):
         charA = self.base_map[pos0[0], pos0[1]]
         charB = self.base_map[pos1[0], pos1[1]]
@@ -744,7 +745,7 @@ class GridWorldAdaptiveEnv(object):
                 self.agents[1].reward_this_return = self.defect_coef * self.coop_length
                 self.agents[0].done = True
                 self.agents[1].done = True
-                      
+
     def close(self):
         self.agents = []
         return None
@@ -766,10 +767,10 @@ class GridWorldAdaptiveEnv(object):
 
         rgb_arr = self.map_to_colors(map_with_agents)
         plt.figure()
-        plt.imshow(rgb_arr, interpolation='nearest')        
-        text = "coop_num = " + str(self.coop_num) + "/" + str(self.episode_length)        
+        plt.imshow(rgb_arr, interpolation='nearest')
+        text = "coop_num = " + str(self.coop_num) + "/" + str(self.episode_length)
         plt.text(0, 0, text, fontdict={'size': 10, 'color':  'white'})
-        if 'StagHunt' in self.env_name: 
+        if 'StagHunt' in self.env_name:
             text = "agent1_gore_num = " + str(self.gore1_num) + "/" + str(self.episode_length)
             plt.text(0, 0.2, text, fontdict={'size': 10, 'color':  'white'})
             text = "agent1_hare_num = " + str(self.hare1_num) + "/" + str(self.episode_length)
@@ -778,28 +779,35 @@ class GridWorldAdaptiveEnv(object):
             plt.text(0, 0.6, text, fontdict={'size': 10, 'color':  'white'})
             text = "agent2_hare_num = " + str(self.hare2_num) + "/" + str(self.episode_length)
             plt.text(0, 0.8, text, fontdict={'size': 10, 'color':  'white'})
-        plt.title(self.env_name + "_Game: Policy-" + str(self.select_opponent) )       
+        plt.title(self.env_name + "_Game: Policy-" + str(self.select_opponent))
         if filename is not None:
             plt.savefig(filename)
-        
+
         return rgb_arr.astype(np.uint8)
 
-    def step(self, actions): #action [1,2,4,3,7]
+    def step(self, actions):                # action [1,2,4,3,7]
         """A single environment step. Returns reward, terminated, info."""
         actions = [np.argmax(a) for a in actions]
 
-        _, a, _, recurrent_hidden_states, recurrent_hidden_states_critic, recurrent_c_states, recurrent_c_states_critic = self.opponent_actor_critic.act(self.opponent_share_obs, self.opponent_obs,self.recurrent_hidden_states,self.recurrent_hidden_states_critic,self.recurrent_c_states,self.recurrent_c_states_critic,self.masks)
+        _, a, _, recurrent_hidden_states, recurrent_hidden_states_critic, recurrent_c_states, recurrent_c_states_critic = self.opponent_actor_critic.act(
+            self.opponent_share_obs,
+            self.opponent_obs,
+            self.recurrent_hidden_states,
+            self.recurrent_hidden_states_critic,
+            self.recurrent_c_states,
+            self.recurrent_c_states_critic,
+            self.masks)
 
         self.recurrent_hidden_states = recurrent_hidden_states
         self.recurrent_hidden_states_critic = recurrent_hidden_states_critic
         self.recurrent_c_states = recurrent_c_states
         self.recurrent_c_states_critic = recurrent_c_states_critic
-               
+
         actions.append(int(a.cpu().numpy()))
 
         agent_actions = {}
         for i in range(self.num_agents):
-            agent_action = self.agents[i].action_map(actions[i]) # such as 'FIRE'
+            agent_action = self.agents[i].action_map(actions[i])    # such as 'FIRE'
             agent_actions[i] = agent_action
 
         # stag
@@ -807,7 +815,7 @@ class GridWorldAdaptiveEnv(object):
             self.update_stag()
         # move
         self.update_moves(agent_actions)
-                   
+
         pos0 = self.agents[0].get_pos().tolist()
         pos1 = self.agents[1].get_pos().tolist()
         if self.env_name == 'StagHuntGWAdaptive':
@@ -825,14 +833,14 @@ class GridWorldAdaptiveEnv(object):
         opponent_observations = []
         rewards = []
         dones = []
-        infos = {'collective_return': [], 'coop&coop_num': [], 'gore1_num': [], 'gore2_num': [],'hare1_num': [], 'hare2_num': []}
-        
+        infos = {'collective_return': [], 'coop&coop_num': [], 'gore1_num': [], 'gore2_num': [], 'hare1_num': [], 'hare2_num': []}
+
         select_opponent_obs = np.zeros(self.num_policy_candidates).tolist()
-        select_opponent_obs[self.select_opponent]=1
-        
+        select_opponent_obs[self.select_opponent] = 1
+
         for i in range(self.num_agents):
             obs = self.get_obs_agent(i)
-            opponent_observations.append(obs)                        
+            opponent_observations.append(obs)
             if self.critic_full_obs:
                 critic_observations.append(np.concatenate([obs]+[select_opponent_obs]))
                 observations.append(np.concatenate([obs]+[np.zeros(self.num_policy_candidates).tolist()]))
@@ -841,14 +849,14 @@ class GridWorldAdaptiveEnv(object):
             reward = self.agents[i].compute_reward() * 0.1
             rewards.append(reward)
             dones.append(self.agents[i].get_done())
-            
-        self.opponent_share_obs = torch.tensor(np.array([opponent_observations]).reshape(1, -1),dtype=torch.float32)
-        self.opponent_obs = torch.tensor(np.array([opponent_observations])[:,1,:],dtype=torch.float32)
-            
+
+        self.opponent_share_obs = torch.tensor(np.array([opponent_observations]).reshape(1, -1), dtype=torch.float32)
+        self.opponent_obs = torch.tensor(np.array([opponent_observations])[:, 1, :], dtype=torch.float32)
+
         collective_return = 0
         for i in range(self.num_agents):
             collective_return += self.agents[i].collective_return
-            
+
         if rewards[0] > 0.1 and rewards[1] > 0.1:
             self.coop_num += 1
 
@@ -859,14 +867,14 @@ class GridWorldAdaptiveEnv(object):
             infos['gore2_num'] = self.gore2_num
             infos['hare1_num'] = self.hare1_num
             infos['hare2_num'] = self.hare2_num
-            
-        global_reward = np.sum(rewards)  
+
+        global_reward = np.sum(rewards)
         if self.share_reward:
             rewards = [global_reward] * self.num_agents
 
         if self.shape_reward:
-            rewards = list(map(lambda x :x[0] * self.shape_beta + x[1] * (1-self.shape_beta), zip([global_reward] * self.num_agents, rewards)))
-            
+            rewards = list(map(lambda x: x[0] * self.shape_beta + x[1] * (1-self.shape_beta), zip([global_reward] * self.num_agents, rewards)))
+
         if self.critic_full_obs:
             return observations, critic_observations, self.select_opponent, rewards, dones, infos
         else:
@@ -875,19 +883,19 @@ class GridWorldAdaptiveEnv(object):
     def reset(self, choose=-1):
         """Reset the environment. Required after each full episode.
         Returns initial observations and states.
-        """   
+        """
         self.reset_map()
         print("choose:")
         print(choose)
         self.setup_agents(choose=choose)
-        
+
         select_opponent_obs = np.zeros(self.num_policy_candidates).tolist()
-        select_opponent_obs[self.select_opponent]=1
+        select_opponent_obs[self.select_opponent] = 1
 
         observations = []
         critic_observations = []
         opponent_observations = []
-        
+
         for i in range(self.num_agents):
             obs = self.get_obs_agent(i)
             if self.critic_full_obs:
@@ -896,16 +904,11 @@ class GridWorldAdaptiveEnv(object):
             else:
                 observations.append(obs)
             opponent_observations.append(obs)
-            
-                   
-        self.opponent_share_obs = torch.tensor(np.array([opponent_observations]).reshape(1, -1),dtype=torch.float32)
-        self.opponent_obs = torch.tensor(np.array([opponent_observations])[:,1,:],dtype=torch.float32)
-        
+
+        self.opponent_share_obs = torch.tensor(np.array([opponent_observations]).reshape(1, -1), dtype=torch.float32)
+        self.opponent_obs = torch.tensor(np.array([opponent_observations])[:, 1, :], dtype=torch.float32)
+
         if self.critic_full_obs:
             return observations, critic_observations, self.select_opponent
         else:
             return observations, self.select_opponent
-
-
-
-    

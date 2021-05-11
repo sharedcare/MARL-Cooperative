@@ -14,7 +14,7 @@ from config import get_config
 
 # Some Hyper Parameters
 Gamma = 0.95
-NUM_EPISODE = 2000
+NUM_EPISODE = 10000
 
 
 class Policy(object):
@@ -334,7 +334,7 @@ if __name__ == '__main__':
     epsilon_set = [0.1]
     alpha_set = [0.1]
     beta_set = [0.01]
-    repeat_num = 5
+    repeat_num = 1
 
     if args.algorithm_name == 'Q':
         print("Using algorithm Q-Learning ...")
@@ -344,7 +344,7 @@ if __name__ == '__main__':
             for alpha in alpha_set:
                 for beta in beta_set:
                     for i in range(repeat_num):
-                        Q1, Q2, P1, P2, episodes_results = rl.QLearning(nEpisodes=5, epsilon=epsilon, alpha=alpha)
+                        Q1, Q2, P1, P2, episodes_results = rl.QLearning(nEpisodes=NUM_EPISODE, epsilon=epsilon, alpha=alpha)
                         # concat dataframe
                         data_results_Q = pd.concat([data_results_Q, episodes_results], ignore_index=True)
         # save the statistical result to file
@@ -365,7 +365,7 @@ if __name__ == '__main__':
             for alpha in alpha_set:
                 for beta in beta_set:
                     for i in range(repeat_num):
-                        Q1, Q2, P1, P2, episodes_results = rl.HysQLearning(nEpisodes=20, epsilon=epsilon, alpha=alpha, beta=beta)
+                        Q1, Q2, P1, P2, episodes_results = rl.HysQLearning(nEpisodes=NUM_EPISODE, epsilon=epsilon, alpha=alpha, beta=beta)
                         # concat dataframe
                         data_results_hysQ = pd.concat([data_results_hysQ, episodes_results], ignore_index=True)
         # save the statistical result to file
