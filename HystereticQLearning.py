@@ -4,6 +4,7 @@ import copy
 import glob
 import os
 import time
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -14,7 +15,7 @@ from config import get_config
 
 # Some Hyper Parameters
 Gamma = 0.95
-NUM_EPISODE = 10000
+NUM_EPISODE = 30000
 
 
 class Policy(object):
@@ -196,8 +197,9 @@ class ReinforcementLearning(object):
                     collective_reward = infos['collective_return']
                     break
             # append the logging statistics
-            total_reward_episodes.append([episode + 1, R_traj_agent_1, R_traj_agent_2, steps_cnt, coop_num_cnt, collective_reward, epsilon])
-            print('Episode: {0} \t Reward: {1} \t Total Steps: {2}'.format(episode+1, collective_reward, steps_cnt))
+            total_reward_episodes.append([episode + 1, R_traj_agent_1, R_traj_agent_2, steps_cnt, coop_num_cnt, collective_reward, cur_epsilon])
+            print('Episode: {0} \t Reward: {1} \t Total Steps: {2} \t Current epsilon: {3} \t Current iteration: {4}'.format(
+                episode+1, collective_reward, steps_cnt, cur_epsilon, total_t))
 
             # generate final policy based on Q-table
             for x1 in range(gw_size):
@@ -307,13 +309,17 @@ class ReinforcementLearning(object):
                 else:
                     done = False
                 steps_cnt += 1
+                total_t += 1
+                # if total_t % 10000 == 0:
+                #     print("Already {0} iterations, current epsilon: {1}".format(total_t, cur_epsilon))
                 if steps_cnt >= max_step:
                     coop_num_cnt = infos['coop&coop_num']
                     collective_reward = infos['collective_return']
                     break
             # append the logging statistics
-            total_reward_episodes.append([episode + 1, R_traj_agent_1, R_traj_agent_2, steps_cnt, coop_num_cnt, collective_reward, epsilon])
-            print('Episode: {0} \t Reward: {1} \t Total Steps: {2}'.format(episode+1, collective_reward, steps_cnt))
+            total_reward_episodes.append([episode + 1, R_traj_agent_1, R_traj_agent_2, steps_cnt, coop_num_cnt, collective_reward, cur_epsilon])
+            print('Episode: {0} \t Reward: {1} \t Total Steps: {2} \t Current epsilon: {3} \t Current iteration: {4}'.format(
+                episode+1, collective_reward, steps_cnt, cur_epsilon, total_t))
 
             # generate final policy based on Q-table
             for x1 in range(gw_size):
@@ -340,6 +346,7 @@ if __name__ == '__main__':
     # Init the environment
     args = get_config()
     print("Using Environment: {}".format(args.env_name))
+    NUM_EPISODE = args.num_episodes
 
     # Since we only consider a case where we only has 2 agents
     assert args.num_agents == 2
@@ -348,7 +355,10 @@ if __name__ == '__main__':
 
     rl = ReinforcementLearning(env=env)
 
-    epsilon_set = [0.1]
+    now_time = datetime.now()
+    time_name = str(now_time.month)+"_"+str(now_time.day)+"_"+str(now_time.hour)+"_"+str(now_time.minute)
+
+    epsilon_set = [0.0001]
     alpha_set = [0.1]
     beta_set = [0.01]
     repeat_num = 1
@@ -361,11 +371,11 @@ if __name__ == '__main__':
             for alpha in alpha_set:
                 for beta in beta_set:
                     for i in range(repeat_num):
-                        Q1, Q2, P1, P2, episodes_results = rl.QLearning(nEpisodes=NUM_EPISODE, epsilon=epsilon, alpha=alpha)
+                        Q1, Q2, P1, P2, episodes_results = rl.QLearning(nEpisodes=NUM_EPISODE, epsilon_end=epsilon, alpha=alpha)
                         # concat dataframe
                         data_results_Q = pd.concat([data_results_Q, episodes_results], ignore_index=True)
         # save the statistical result to file
-        data_results_Q.to_csv('Decentralized_QL.csv')
+        data_results_Q.to_csv('Decentralized_QL_{}.csv'.format(time_name))
         if args.plot_reward:
             # draw the reward
             sns.relplot(
@@ -382,11 +392,11 @@ if __name__ == '__main__':
             for alpha in alpha_set:
                 for beta in beta_set:
                     for i in range(repeat_num):
-                        Q1, Q2, P1, P2, episodes_results = rl.HysQLearning(nEpisodes=NUM_EPISODE, epsilon=epsilon, alpha=alpha, beta=beta)
+                        Q1, Q2, P1, P2, episodes_results = rl.HysQLearning(nEpisodes=NUM_EPISODE, epsilon_end=epsilon, alpha=alpha, beta=beta)
                         # concat dataframe
                         data_results_hysQ = pd.concat([data_results_hysQ, episodes_results], ignore_index=True)
         # save the statistical result to file
-        data_results_hysQ.to_csv('Hysteretic_QL.csv')
+        data_results_hysQ.to_csv('Hysteretic_QL_{}.csv'.format(time_name))
         if args.plot_reward:
             # draw the reward
             sns.relplot(
